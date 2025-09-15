@@ -1,100 +1,27 @@
 # Clean Energy Predictor
 
-A full-stack web application that helps users identify the cleanest hours of the day for electricity usage by analyzing real-time environmental and grid data.
-
-## Project Structure
-
-```
-clean-energy-predictor/
-├── backend/                    # FastAPI backend
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── models/            # Pydantic data models
-│   │   │   ├── __init__.py
-│   │   │   ├── environmental.py
-│   │   │   ├── grid.py
-│   │   │   └── prediction.py
-│   │   ├── services/          # Business logic services
-│   │   │   ├── __init__.py
-│   │   │   ├── data_ingestion.py
-│   │   │   └── prediction.py
-│   │   └── api/              # API routes
-│   │       ├── __init__.py
-│   │       └── routes/
-│   │           ├── predictions.py
-│   │           ├── impact.py
-│   │           ├── locations.py
-│   │           └── notifications.py
-│   ├── tests/                # Backend tests
-│   │   ├── __init__.py
-│   │   ├── test_main.py
-│   │   └── test_models.py
-│   ├── main.py              # FastAPI entry point
-│   ├── requirements.txt     # Python dependencies
-│   ├── pyproject.toml      # Python project config
-│   └── .flake8            # Linting configuration
-├── frontend/               # React frontend
-│   ├── src/
-│   │   ├── components/    # React components
-│   │   │   ├── Dashboard/
-│   │   │   │   ├── Dashboard.tsx
-│   │   │   │   ├── Timeline.tsx
-│   │   │   │   ├── ImpactPanel.tsx
-│   │   │   │   └── LocationSelector.tsx
-│   │   │   └── Common/
-│   │   │       ├── LoadingSpinner.tsx
-│   │   │       └── ErrorBoundary.tsx
-│   │   ├── hooks/        # Custom React hooks
-│   │   │   ├── usePredictions.ts
-│   │   │   ├── useImpactMetrics.ts
-│   │   │   ├── useLocations.ts
-│   │   │   └── useNotifications.ts
-│   │   ├── services/     # API client
-│   │   │   └── api.ts
-│   │   ├── utils/        # Utility functions
-│   │   │   ├── colorMapping.ts
-│   │   │   └── impactCalculations.ts
-│   │   ├── test/         # Frontend tests
-│   │   │   ├── setup.ts
-│   │   │   ├── Dashboard.test.tsx
-│   │   │   └── Timeline.test.tsx
-│   │   ├── App.tsx
-│   │   ├── App.css
-│   │   ├── main.tsx
-│   │   └── index.css
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── vite.config.ts
-│   ├── tailwind.config.js
-│   ├── postcss.config.js
-│   ├── .eslintrc.cjs
-│   ├── .prettierrc
-│   └── index.html
-├── shared/                # Shared TypeScript types
-│   └── types/
-│       └── index.ts
-└── README.md
-```
+A full-stack web application that helps users identify the cleanest hours of the day for electricity usage by analyzing real-time environmental data using trained ML model.
 
 ## Features
 
-- **24-Hour Predictions**: AI-powered cleanliness scores for the next 24 hours
-- **Interactive Timeline**: Color-coded visualization of clean vs dirty energy periods
-- **Environmental Impact**: Calculate CO₂ savings in relatable terms (trees, car km, etc.)
-- **Location Support**: Multiple geographic regions with location-specific data
-- **Responsive Design**: Works seamlessly on desktop and mobile devices
-- **Real-time Updates**: Automatic data refresh and live predictions
+- **Live 24‑Hour Predictions** — Generates cleanliness scores for each hour using real‑time weather forecasts and a trained XGBoost ranking model.
+- **Interactive Timeline Graph** — Color‑coded view of clean vs. dirty energy periods, with a green highlight band for the optimal usage window.
+- **Environmental Impact Panel** — Converts predicted CO₂ savings into relatable equivalents (e.g., trees planted) with friendly, motivational messages 🌱🌳.
+- **Location‑Aware Forecasts** — Enter any city or location; backend geocodes it and fetches tailored weather data from public APIs.
+- **Optimal Window Recommendation** — Suggests the best continuous time block for clean energy usage based on user‑selected duration.
+- **Real‑Time Data Freshness** — Every prediction request fetches the latest weather data, ensuring recommendations are always up to date.
 
 ## Technology Stack
 
 ### Backend
-- **FastAPI**: Modern Python web framework
-- **Pydantic**: Data validation and serialization
-- **SQLAlchemy**: Database ORM
-- **PostgreSQL**: Primary database
-- **Prophet/Scikit-learn**: Machine learning models
-- **Pytest**: Testing framework
-
+- **FastAPI** — Modern Python web framework for serving APIs.
+- **Pydantic** — Data validation and serialization for request/response models.
+- **Async SQLAlchemy** — Structured data handling (currently using in‑memory/static datasets; no external DB in this build).
+- **Data Pipeline** — Python scripts to fetch and merge 1 year of historical carbon intensity + weather data from public APIs (UK Carbon Intensity API, Open‑Meteo Weather Archive).
+- **Machine Learning** — XGBoost ranking model (`rank:pairwise`) trained on weather + time features to score hours by predicted cleanliness.
+- **Joblib** — Model persistence and loading.
+- **Requests / Pandas** — API calls, data wrangling, and feature engineering.
+- **Pytest** — Backend testing framework.
 ### Frontend
 - **React 18**: UI framework with TypeScript
 - **TailwindCSS**: Utility-first CSS framework
@@ -112,7 +39,6 @@ clean-energy-predictor/
 ### Prerequisites
 - Python 3.9+
 - Node.js 18+
-- PostgreSQL (for production)
 
 ### Backend Setup
 
@@ -160,10 +86,25 @@ The frontend will be available at `http://localhost:3000`
 
 ## API Endpoints
 
-- `GET /api/v1/predictions` - Get 24-hour cleanliness predictions
-- `GET /api/v1/impact` - Calculate environmental impact metrics
-- `GET /api/v1/locations` - Get supported locations
-- `POST /api/v1/notifications/subscribe` - Subscribe to notifications
+- **`GET /api/v1/predictions`**  
+  Generates live cleanliness predictions for a given location using:
+  - OpenStreetMap Nominatim API for geocoding
+  - Open‑Meteo Forecast API for weather data
+  - Trained XGBoost ranking model for scoring hours by predicted cleanliness  
+  **Query parameters:**
+    - `location` *(string, required)* — City or place name (e.g., `"London"`)
+    - `hours_ahead` *(int, optional, default=24)* — Forecast horizon in hours
+    - `day` *(YYYY-MM-DD, optional)* — Filter predictions to a specific date
+    - `duration_hours` *(int, optional, default=1)* — Duration of optimal usage window to recommend
+
+- **`GET /api/v1/impact`**  
+  Calculates environmental impact equivalents (e.g., trees planted) based on predicted CO₂ savings for a given usage window.
+
+- **`GET /api/v1/locations`**  
+  Returns a list of supported or recently queried locations.
+
+- **`POST /api/v1/notifications/subscribe`**  
+  Subscribes a user to clean‑energy usage alerts for their chosen location and preferences.
 
 ## Testing
 
@@ -171,12 +112,6 @@ The frontend will be available at `http://localhost:3000`
 ```bash
 cd backend
 pytest
-```
-
-### Frontend Tests
-```bash
-cd frontend
-npm test
 ```
 
 ## Linting and Formatting
@@ -199,10 +134,13 @@ npm run format
 ## Deployment
 
 The application is designed to be deployed on:
-- **Backend**: Render, Heroku, or similar Python hosting
-- **Frontend**: Vercel, Netlify, or similar static hosting
-- **Database**: PostgreSQL on cloud providers
 
+- **Backend**: Render, Railway, Heroku, or similar Python hosting for FastAPI apps.  
+  Loads the trained XGBoost model from `models/` and fetches live weather data from public APIs.
+- **Frontend**: Vercel, Netlify, or similar static hosting for React + TypeScript builds.
+- **Data/Model Storage**: Model `.pkl` file and any static datasets can be stored in the repo, on cloud storage (e.g., AWS S3, Google Cloud Storage), or as build assets.
+
+> **Note:** This build does not require a live database — predictions are generated from live API data combined with the pre‑trained model.
 ## Contributing
 
 1. Fork the repository
