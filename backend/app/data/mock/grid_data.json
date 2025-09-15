@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": "2024-01-15T08:00:00Z",
+    "location": "Ontario",
+    "carbon_intensity": 45.2,
+    "renewable_percentage": 65.8
+  },
+  {
+    "timestamp": "2024-01-15T09:00:00Z",
+    "location": "Ontario",
+    "carbon_intensity": 42.1,
+    "renewable_percentage": 68.3
+  },
+  {
+    "timestamp": "2024-01-15T08:00:00Z",
+    "location": "British Columbia",
+    "carbon_intensity": 12.5,
+    "renewable_percentage": 92.1
+  },
+  {
+    "timestamp": "2024-01-15T09:00:00Z",
+    "location": "British Columbia",
+    "carbon_intensity": 11.8,
+    "renewable_percentage": 93.4
+  }
+]
